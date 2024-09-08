@@ -191,7 +191,6 @@ SOFTWARE.
 
     self.tissQuickRegistration = function () {
         if (options.scriptEnabled) {
-            self.pageLog("TISS Quick Registration Script enabled");
             self.pageLog("LVA Number: " + self.getLVANumber());
             self.pageLog("LVA Name: " + self.getLVAName());
             self.pageLog("Selected Tab: " + self.getSelectedTab());
@@ -268,7 +267,6 @@ SOFTWARE.
         }
         var seconds = offset % 60;
         out += Math.floor(seconds) + " seconds";
-        self.log(out);
 
         self.pageCountdown(out);
 
@@ -535,7 +533,7 @@ SOFTWARE.
     };
 
     self.injectLogField = function () {
-        $('#contentInner').before('<div id="TQRScriptLog" style="color: black; background-color: #FFFCD9; font-size: 10pt;"><b>Information Log:</b></div>');
+        $('#contentInner').before('<div id="TQRScriptLog" style="color: black; background-color: #FFFCD9; font-size: 10pt; max-height: 200px; overflow-y: scroll;"><b>Information Log:</b></div>');
     };
 
     self.appendToLogField = function (text) {
@@ -648,8 +646,8 @@ SOFTWARE.
     };
 
     self.doLvaCheck = function () {
-        var lvaNumber = self.getLVANumber();
-        lvaNumber = lvaNumber.replace(/[^\d]/, '');
+        var lvaNumber = self.getLVANumber(); // abc.12d
+        lvaNumber = lvaNumber.replace(/[^\d]/, ''); // abc12d
         var optionsLvaNumber = options.lvaNumber.replace(/[^\d]/, '');
         if (lvaNumber !== optionsLvaNumber) {
             self.pageOut('wrong lva number error: expected: ' + optionsLvaNumber + ', got: ' + lvaNumber);
