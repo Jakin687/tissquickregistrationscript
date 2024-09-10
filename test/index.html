@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TQR-Interface</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="tqr-menu" class="collapsed">
+        <div class="tqr-header" onclick="document.getElementById('tqr-menu').classList.toggle('collapsed')">
+            <span class="tqr-headline">Easy Auto Registration</span>
+        </div>
+        <div class="tqr-body">
+            <div class="tqr-content">
+                <span id="tqr-countdown" class="tqr-subheadline">No countdown to display</span>
+            </div>
+            <div class="tqr-content">
+                <span class="tqr-subheadline">Log</span>
+                <div id="tqr-log-window"></div>
+            </div>
+            <div class="tqr-content">
+                <span class="tqr-subheadline">Controls</span>
+                <div class="tqr-controls">
+                    <select name="tqr-select-option" id="tqr-select-option"></select>
+                    <button id="tqr-button-save">Save</button>
+                    <button id="tqr-button-delete">Delete</button>
+                    <button id="tqr-button-start">Start</button>
+                </div>
+            </div>
+            <div class="tqr-content" id="tqr-conf-form">
+                <span class="tqr-subheadline">Configurations</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
