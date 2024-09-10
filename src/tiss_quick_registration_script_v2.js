@@ -1,15 +1,13 @@
 // ==UserScript==
 // @name         TISS Quick Registration Script V2
-// @version      2
+// @version      2.4.1
 // @description  Script to help you to get into the group you want. Opens automatically the right panel, registers automatically and confirms your registration automatically. If you don't want the script to do everything automatically, the focus is already set on the right button, so you only need to confirm. There is also an option available to auto refresh the page, if the registration button is not available yet, so you can open the site and watch the script doing its work. You can also set a specific time when the script should reload the page and start.
 // @copyright    2024 Jakob Kinne, MIT License
 // @require      http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
-// @match        https://tiss.tuwien.ac.at/education/course/courseRegistration.xhtml
-// @match        https://tiss.tuwien.ac.at/education/course/register.xhtml
-// @match        https://tiss.tuwien.ac.at/education/course/groupList.xhtml
-// @match        https://tiss.tuwien.ac.at/education/course/examDateList.xhtml
-
-// @match        https://tiss.tuwien.ac.at/education/course/courseRegistration.xhtml?dswid=*&dsrid=*&courseNr=180766&semester=2024W
+// @match        https://tiss.tuwien.ac.at/education/course/courseRegistration.xhtml*
+// @match        https://tiss.tuwien.ac.at/education/course/register.xhtml*
+// @match        https://tiss.tuwien.ac.at/education/course/groupList.xhtml*
+// @match        https://tiss.tuwien.ac.at/education/course/examDateList.xhtml*
 // ==/UserScript==
 
 let tqrOption = {
@@ -42,6 +40,7 @@ let strings = {
     classes: {
         tqr: {
             log: ".tqr-log",
+            inputConf: ".tqr-input-conf-field",
         }
     }
 }
@@ -410,8 +409,15 @@ class TissQuickRegistration {
         if (optionsToInject === undefined) {
             optionsToInject = TQROption.loadTQROption(TissQuickRegistration.getLVANumber(), TissQuickRegistration.getRegistrationType());
         }
+        else if (typeof optionsToInject === "string") {
+            optionsToInject = optionsToInject.split("/");
+            optionsToInject = TQROption.loadTQROption(optionsToInject[0], optionsToInject[1]);
+        }
 
         let section = TissQuickRegistration.getConfigurationSection();
+        section.empty();
+
+        section.append('<span class="tqr-subheadline">Configurations</span>')
         section.append('<div class="tqr-small-spacer"></div>');
 
         for (const [key, value] of Object.entries(optionsToInject.options)) {
@@ -445,7 +451,7 @@ class TissQuickRegistration {
         }
 
         TissQuickRegistration.options = optionsToInject;
-        TissQuickRegistration.updateOptionDropdown();
+        TissQuickRegistration.updateOptionDropdown(optionsToInject.getKey());
     }
 
     static hookControlEvents() {
@@ -462,7 +468,19 @@ class TissQuickRegistration {
         });
 
         TissQuickRegistration.getButtonStart().on("click", function () {
+            let selectedKey = TissQuickRegistration.getLVANumber() + "/" + TissQuickRegistration.getRegistrationType();
+
+            if (TissQuickRegistration.options.getKey() != selectedKey) {
+                TissQuickRegistration.error("Cannot started with these options!");
+                return;
+            }
+
             TissQuickRegistration.log("Script started!");
+        });
+
+        TissQuickRegistration.getOptionSelect().on("input", function (event) {
+            TissQuickRegistration.log("Loading " + event.target.value);
+            TissQuickRegistration.injectOptions(event.target.value);
         });
     }
 
@@ -478,14 +496,21 @@ class TissQuickRegistration {
         let select = TissQuickRegistration.getOptionSelect();
         
         select.empty();
+        let keyExists = false;
 
         for (const key of TQROption.getLocalStorageKeys()) {
+            if (key == selectedKey) {
+                keyExists = true;
+            }
             select.append(TissQuickRegistration.createOption(key, key));
         }
 
-        if (selectedKey !== undefined) {
-            select.attr("value", selectedKey); // Because it is a jQuery-Object
+        if (!keyExists) {
+            select.append(TissQuickRegistration.createOption("", "Create new"));
+            selectedKey = "";
         }
+
+        select.val(selectedKey).change(); // Because it is a jQuery-Object
     }
 
     static createLabel(forElementId, content) {
