@@ -123,9 +123,13 @@
 
 .tqr-log {}
 
-.tqr-log-error {}
+.tqr-log-error {
+    color: #df0000;
+}
 
-.tqr-log-success {}
+.tqr-log-success {
+    color: #00c900;
+}
 
 #tqr-conf-form > input:not([type="checkbox"]) {
     width: 100%;

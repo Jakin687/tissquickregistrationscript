@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         TISS Quick Registration Script V2
-// @version      2.4.1
+// @version      2.4.2
 // @description  Script to help you to get into the group you want. Opens automatically the right panel, registers automatically and confirms your registration automatically. If you don't want the script to do everything automatically, the focus is already set on the right button, so you only need to confirm. There is also an option available to auto refresh the page, if the registration button is not available yet, so you can open the site and watch the script doing its work. You can also set a specific time when the script should reload the page and start.
 // @copyright    2024 Jakob Kinne, MIT License
 // @require      http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
@@ -392,7 +392,7 @@ class TissQuickRegistration {
     static injectCustomCss() {
         $("body").prepend("<style>"+
 `
-:root{--tqr-primary-color:#002d45d2}#tqr-menu{background-color:var(--tqr-primary-color);width:300px;height:500px;position:absolute;border-radius:5px;font-family:Arial,Helvetica,sans-serif;color:#fff;font-size:15px;overflow-y:hidden;transition:height 250ms ease-in-out;z-index:999;margin-top:20px;margin-left:20px;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}#tqr-menu.collapsed{height:38px}#tqr-menu button{background-color:#f2c998;border:1px solid #c48941;color:#804600;-moz-text-shadow:0 1px 0 #fff;-webkit-text-shadow:0 1px 0 #fff;text-shadow:0 1px 0 #fff}#tqr-menu button:focus{-webkit-box-shadow:0 0 5px 2px #f2c998;box-shadow:0 0 5px 2px #f2c998;outline:0}#tqr-menu input{border:1px solid #c48941!important;color:#804600;-moz-text-shadow:0 1px 0 #fff;-webkit-text-shadow:0 1px 0 #fff;text-shadow:0 1px 0 #fff}#tqr-menu input:focus{border:1px solid #c48941!important;-webkit-box-shadow:0 0 5px 2px #f2c998!important;box-shadow:0 0 5px 2px #f2c998!important;outline:0!important}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:0 0}::-webkit-scrollbar-thumb{background:#f2c998;border-radius:10px}::-webkit-scrollbar-thumb:hover{background:#f2c998}.tqr-header{width:100%;height:38px;display:flex;justify-content:center;align-items:center;border-radius:5px 5px 0 5px;background-color:var(--tqr-primary-color);display:flex;cursor:pointer}.tqr-body{width:calc(100% - 30px);height:calc(100% - 58px);padding:10px 15px;overflow-y:scroll}.tqr-headline{font-weight:700;font-size:20px}.tqr-subheadline{font-weight:700;font-size:18px}.tqr-content+.tqr-content{margin-top:20px}.tqr-content>:nth-child(2){margin-top:5px}#tqr-log-window{width:100%;height:100px;display:flex;flex-direction:column;background-color:var(--tqr-primary-color);border-radius:5px;padding:1.25px 4px;overflow:scroll}#tqr-conf-form>input:not([type=checkbox]){width:100%;text-align:center}.tqr-small-spacer{width:100%;height:5px}
+:root{--tqr-primary-color:#002d45d2}#tqr-menu{background-color:var(--tqr-primary-color);width:300px;height:500px;position:absolute;border-radius:5px;font-family:Arial,Helvetica,sans-serif;color:#fff;font-size:15px;overflow-y:hidden;transition:height 250ms ease-in-out;z-index:999;margin-top:20px;margin-left:20px;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}#tqr-menu.collapsed{height:38px}#tqr-menu button{background-color:#f2c998;border:1px solid #c48941;color:#804600;-moz-text-shadow:0 1px 0 #fff;-webkit-text-shadow:0 1px 0 #fff;text-shadow:0 1px 0 #fff}#tqr-menu button:focus{-webkit-box-shadow:0 0 5px 2px #f2c998;box-shadow:0 0 5px 2px #f2c998;outline:0}#tqr-menu input{border:1px solid #c48941!important;color:#804600;-moz-text-shadow:0 1px 0 #fff;-webkit-text-shadow:0 1px 0 #fff;text-shadow:0 1px 0 #fff}#tqr-menu input:focus{border:1px solid #c48941!important;-webkit-box-shadow:0 0 5px 2px #f2c998!important;box-shadow:0 0 5px 2px #f2c998!important;outline:0!important}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:0 0}::-webkit-scrollbar-thumb{background:#f2c998;border-radius:10px}::-webkit-scrollbar-thumb:hover{background:#f2c998}.tqr-header{width:100%;height:38px;display:flex;justify-content:center;align-items:center;border-radius:5px 5px 0 5px;background-color:var(--tqr-primary-color);display:flex;cursor:pointer}.tqr-body{width:calc(100% - 30px);height:calc(100% - 58px);padding:10px 15px;overflow-y:scroll}.tqr-headline{font-weight:700;font-size:20px}.tqr-subheadline{font-weight:700;font-size:18px}.tqr-content+.tqr-content{margin-top:20px}.tqr-content>:nth-child(2){margin-top:5px}#tqr-log-window{width:100%;height:100px;display:flex;flex-direction:column;background-color:var(--tqr-primary-color);border-radius:5px;padding:1.25px 4px;overflow:scroll}.tqr-log-error{color:#df0000}.tqr-log-success{color:#00c900}#tqr-conf-form>input:not([type=checkbox]){width:100%;text-align:center}.tqr-small-spacer{width:100%;height:5px}
 `
             +"</style>");
     }
@@ -475,7 +475,7 @@ class TissQuickRegistration {
                 return;
             }
 
-            TissQuickRegistration.log("Script started!");
+            TissQuickRegistration.success("Script started!");
         });
 
         TissQuickRegistration.getOptionSelect().on("input", function (event) {
@@ -560,7 +560,7 @@ class TissQuickRegistration {
         let logField = TissQuickRegistration.getLogField();
 
         let entry = document.createElement("span");
-        entry.classList.add(strings.classes.tqr.log + (type !== undefined) ? ("-" + type) : "");
+        entry.classList.add(strings.classes.tqr.log.substring(1) + ((type != undefined) ? ("-" + type) : ""));
         entry.innerHTML = text;
 
         logField.append(entry);
