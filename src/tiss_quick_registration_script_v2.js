@@ -276,6 +276,18 @@ class TissQuickRegistration {
                 .end()
                 .text().trim();
         };
+
+        jQuery.fn.disable = function () {
+            let e = $(this);
+            e.attr("disabled", true);
+            return e;
+        };
+
+        jQuery.fn.enable = function () {
+            let e = $(this);
+            e.attr("disabled", false);
+            return e;
+        };
     }
 
     run() {
@@ -283,6 +295,7 @@ class TissQuickRegistration {
         TissQuickRegistration.log("LVA-Number: " + TissQuickRegistration.getLVANumber());
         TissQuickRegistration.log("RegistrationType: " + TissQuickRegistration.getRegistrationType());
         TissQuickRegistration.log("Semester: " + TissQuickRegistration.getSemester());
+        TissQuickRegistration.error("Warning current version might not support exams");
 
         if (!TissQuickRegistration.options.started.val()) return;
 
@@ -345,6 +358,11 @@ class TissQuickRegistration {
     }
 
     static printTimeToStart(startTime) {
+        if (!TissQuickRegistration.options.started.val()) {
+            TissQuickRegistration.removeCountdownField();
+            return;
+        }
+
         let offset = (startTime - new Date().getTime()) / 1000;
         let out = "Refresh in: ";
         let minutes = offset / 60;
@@ -493,7 +511,14 @@ class TissQuickRegistration {
         });
     }
 
-    static getExamDate() {}
+    static getExamDate() {
+        return $(".groupWrapper .header_element").filter(function () {
+            let examData = $(this).text().trim();
+            let examLabel = TissQuickRegistration.getExamLabel().first().text().trim() + " ";
+            let examDate = examData.replace(examLabel, '');
+            return examDate.match(TissQuickRegistration.options.dateOfExam.val());
+        });
+    }
 
     static getDateFormat(date) {
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
@@ -661,17 +686,24 @@ class TissQuickRegistration {
         $("#tqr-menu > .tqr-footer").last().html('<span id="tqr-countdown" class="tqr-subheadline">No countdown to display</span>');
     }
 
-    static manageControlAccess() {
-        console.log(TissQuickRegistration.options.options.started);
-        
+    static removeCountdownField() {
+        $(strings.ids.tqr.countdown).remove();
+    }
 
+    static manageControlAccess() {
         if (TissQuickRegistration.options.started.val()) {
-            TissQuickRegistration.getButtonStart().attr("disabled", true);
-            TissQuickRegistration.getButtonStop().attr("disabled", false);
+            TissQuickRegistration.getOptionSelect().disable();
+            TissQuickRegistration.getButtonSave().disable();
+            TissQuickRegistration.getButtonDelete().disable();
+            TissQuickRegistration.getButtonStart().disable();
+            TissQuickRegistration.getButtonStop().enable();
         }
         else {
-            TissQuickRegistration.getButtonStart().attr("disabled", false);
-            TissQuickRegistration.getButtonStop().attr("disabled", true);
+            TissQuickRegistration.getOptionSelect().enable();
+            TissQuickRegistration.getButtonSave().enable();
+            TissQuickRegistration.getButtonDelete().enable();
+            TissQuickRegistration.getButtonStart().enable();
+            TissQuickRegistration.getButtonStop().disable();
         }
     }
 
@@ -701,9 +733,22 @@ class TissQuickRegistration {
             TissQuickRegistration.options.started(true);
             TissQuickRegistration.getButtonSave().click();
             TissQuickRegistration.manageControlAccess();
+            TissQuickRegistration.getConfigurationInputFields().each(function () {
+                $(this).disable();
+            });
 
             TissQuickRegistration.success("Script started!");
             TissQuickRegistration.tissQuickRegistration();
+        });
+
+        TissQuickRegistration.getButtonStop().on("click", function () {
+            TissQuickRegistration.options.started(false);
+            TissQuickRegistration.getButtonSave().click();
+            TissQuickRegistration.manageControlAccess();
+            TissQuickRegistration.getConfigurationInputFields().each(function () {
+                $(this).enable();
+            });
+            TissQuickRegistration.error("Script stopped!");
         });
 
         TissQuickRegistration.getOptionSelect().on("input", function (event) {
