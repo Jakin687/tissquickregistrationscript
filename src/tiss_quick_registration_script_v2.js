@@ -17,6 +17,7 @@ let tqrOption = {
         EXAM: "exam",
         NONE: "none"
     },
+    excludedOptions: ["lvaNumber", "registrationType", "started"],
     localStorageKey: "TQRSavedOptions"
 };
 
@@ -41,6 +42,11 @@ let strings = {
         tqr: {
             log: ".tqr-log",
             inputConf: ".tqr-input-conf-field",
+        }
+    },
+    attributes: {
+        tqr: {
+            optionName: "aria-option-name",
         }
     }
 }
@@ -71,23 +77,22 @@ class TQROption {
     constructor () {
         this.options = {
             scriptEnabled: true,
-            registrationType: tqrOption.type.NONE,
             lvaCheckEnabled: true,
-            lvaNumber: "",
             lvaSemesterCheckEnabled: true,
-            lvaSemester: TQROption.getCurrentOrNextSemester(),
             openPanel: true,
             autoRegister: true,
             autoConfirm: true,
             autoRefresh: true,
             autoOkPressAtEnd: true,
-            okPressAtEndDelayInMs: 1000,
             startAtSpecificTime: true,
-            specificStartTime: TQROption.getDate(2024, 9, 9, 0, 0),
+            okPressAtEndDelayInMs: 1000,
             delayAdjustmentInMs: 300,
-            showLog: true,
-
+            specificStartTime: TQROption.getDate(2024, 9, 9, 0, 0),
+            lvaSemester: TQROption.getCurrentOrNextSemester(),
+            
+            registrationType: tqrOption.type.NONE,
             started: false,
+            lvaNumber: "",
         }
     }
 
@@ -155,10 +160,12 @@ class TQROption {
     }
 
     setOptions(newOptions) {
-        this.options = newOptions;
+        for (const [key, value] of Object.entries(newOptions)) {
+            this.options[key] = value;
+        }
 
-        if (typeof newOptions.specificStartTime === "string") {
-            newOptions.specificStartTime = new Date(newOptions.specificStartTime);
+        if (typeof this.options.specificStartTime === "string") {
+            this.options.specificStartTime = new Date(this.options.specificStartTime);
         }
 
         return this;
@@ -339,6 +346,21 @@ class TissQuickRegistration {
         return $(strings.classes.tqr.inputConf);
     }
 
+    static getDataFromConfigurationSection() {
+        let data = {};
+
+        TissQuickRegistration.getConfigurationInputFields().each(function () {
+            if (this.getAttribute("type") == "checkbox") {
+                data[this.getAttribute(strings.attributes.tqr.optionName)] = this.checked;
+            }
+            else {
+                data[this.getAttribute(strings.attributes.tqr.optionName)] = this.value;
+            }
+        });
+
+        return data;
+    }
+
     static getRegistrationButton() {}
 
     static getConfirmButton() {}
@@ -411,7 +433,7 @@ class TissQuickRegistration {
     static injectCustomCss() {
         $("body").prepend("<style>"+
 `
-:root{--tqr-primary-color:#002d45d2}#tqr-menu{background-color:var(--tqr-primary-color);width:300px;height:500px;position:absolute;border-radius:5px;font-family:Arial,Helvetica,sans-serif;color:#fff;font-size:15px;overflow-y:hidden;transition:height 250ms ease-in-out;z-index:999;margin-top:20px;margin-left:20px;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}#tqr-menu.collapsed{height:38px}#tqr-menu button{background-color:#f2c998;border:1px solid #c48941;color:#804600;-moz-text-shadow:0 1px 0 #fff;-webkit-text-shadow:0 1px 0 #fff;text-shadow:0 1px 0 #fff}#tqr-menu button:focus{-webkit-box-shadow:0 0 5px 2px #f2c998;box-shadow:0 0 5px 2px #f2c998;outline:0}#tqr-menu input{border:1px solid #c48941!important;color:#804600;-moz-text-shadow:0 1px 0 #fff;-webkit-text-shadow:0 1px 0 #fff;text-shadow:0 1px 0 #fff}#tqr-menu input:focus{border:1px solid #c48941!important;-webkit-box-shadow:0 0 5px 2px #f2c998!important;box-shadow:0 0 5px 2px #f2c998!important;outline:0!important}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:0 0}::-webkit-scrollbar-thumb{background:#f2c998;border-radius:10px}::-webkit-scrollbar-thumb:hover{background:#f2c998}.tqr-header{width:100%;height:38px;display:flex;justify-content:center;align-items:center;border-radius:5px 5px 0 5px;background-color:var(--tqr-primary-color);display:flex;cursor:pointer}.tqr-body{width:calc(100% - 30px);height:calc(100% - 58px);padding:10px 15px;overflow-y:scroll}.tqr-headline{font-weight:700;font-size:20px}.tqr-subheadline{font-weight:700;font-size:18px}.tqr-content+.tqr-content{margin-top:20px}.tqr-content>:nth-child(2){margin-top:5px}#tqr-log-window{width:100%;height:100px;display:flex;flex-direction:column;background-color:var(--tqr-primary-color);border-radius:5px;padding:1.25px 4px;overflow:scroll}.tqr-log-error{color:#df0000}.tqr-log-success{color:#00c900}#tqr-conf-form>input:not([type=checkbox]){width:100%;text-align:center}.tqr-small-spacer{width:100%;height:5px}
+:root{--tqr-primary-color:#002d45d2}#tqr-menu{background-color:var(--tqr-primary-color);width:300px;height:500px;position:absolute;border-radius:5px;font-family:Arial,Helvetica,sans-serif;color:#fff;font-size:15px;overflow-y:hidden;transition:height 250ms ease-in-out;z-index:1000;margin-top:20px;margin-left:20px;-webkit-touch-callout:none;-webkit-user-select:none;-khtml-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none}#tqr-menu.collapsed{height:38px}#tqr-menu.collapsed:has(#tqr-countdown){height:76px}#tqr-menu button{background-color:#f2c998;border:1px solid #c48941;color:#804600;-moz-text-shadow:0 1px 0 #fff;-webkit-text-shadow:0 1px 0 #fff;text-shadow:0 1px 0 #fff}#tqr-menu button:focus{-webkit-box-shadow:0 0 5px 2px #f2c998;box-shadow:0 0 5px 2px #f2c998;outline:0}#tqr-menu input{border:1px solid #c48941!important;color:#804600;-moz-text-shadow:0 1px 0 #fff;-webkit-text-shadow:0 1px 0 #fff;text-shadow:0 1px 0 #fff}#tqr-menu input:focus{border:1px solid #c48941!important;-webkit-box-shadow:0 0 5px 2px #f2c998!important;box-shadow:0 0 5px 2px #f2c998!important;outline:0!important}::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:0 0}::-webkit-scrollbar-thumb{background:#f2c998;border-radius:10px}::-webkit-scrollbar-thumb:hover{background:#f2c998}.tqr-header{width:100%;height:38px;display:flex;justify-content:center;align-items:center;border-radius:5px 5px 0 0;background-color:var(--tqr-primary-color);display:flex;cursor:pointer;position:relative;top:0;z-index:1002}.tqr-footer{width:100%;height:38px;display:flex;justify-content:center;align-items:center;border-radius:0 0 5px 5px;background-color:var(--tqr-primary-color);display:flex;position:absolute;bottom:0;z-index:1001}.tqr-body{width:calc(100% - 30px);height:calc(100% - 96px);padding:10px 15px;overflow-y:scroll}.collapsed>.tqr-body{display:none}.tqr-headline{font-weight:700;font-size:20px}.tqr-subheadline{font-weight:700;font-size:18px}.tqr-content+.tqr-content{margin-top:20px}.tqr-content>:nth-child(2){margin-top:5px}#tqr-log-window{width:100%;height:100px;display:flex;flex-direction:column;background-color:var(--tqr-primary-color);border-radius:5px;padding:1.25px 4px;overflow-y:scroll}.tqr-log-error{color:#df0000}.tqr-log-success{color:#00c900}#tqr-conf-form>input:not([type=checkbox]){width:100%;text-align:center}.tqr-small-spacer{width:100%;height:5px}
 `
             +"</style>");
     }
@@ -419,7 +441,7 @@ class TissQuickRegistration {
     static injectInterface() {
         $(strings.ids.tiss.header).prepend(
 `
-<div id="tqr-menu" class="collapsed"><div class="tqr-header" onclick="document.getElementById(&#34;tqr-menu&#34;).classList.toggle(&#34;collapsed&#34;)"><span class="tqr-headline">Easy Auto Registration</span></div><div class="tqr-body"><div class="tqr-content"><span id="tqr-countdown" class="tqr-subheadline">No countdown to display</span></div><div class="tqr-content"><span class="tqr-subheadline">Log</span><div id="tqr-log-window"></div></div><div class="tqr-content"><span class="tqr-subheadline">Controls</span><div class="tqr-controls"><select name="tqr-select-option" id="tqr-select-option"></select> <button id="tqr-button-save">Save</button> <button id="tqr-button-delete">Delete</button> <button id="tqr-button-start">Start</button></div></div><div class="tqr-content" id="tqr-conf-form"><span class="tqr-subheadline">Configurations</span></div></div></div>
+<div id="tqr-menu" class="collapsed"><div class="tqr-header" onclick="document.getElementById(&#34;tqr-menu&#34;).classList.toggle(&#34;collapsed&#34;)"><span class="tqr-headline">Easy Auto Registration</span></div><div class="tqr-body"><div class="tqr-content"><span class="tqr-subheadline">Log</span><div id="tqr-log-window"></div></div><div class="tqr-content"><span class="tqr-subheadline">Controls</span><div class="tqr-controls"><select name="tqr-select-option" id="tqr-select-option"></select> <button id="tqr-button-save">Save</button> <button id="tqr-button-delete">Delete</button> <button id="tqr-button-start">Start</button></div></div><div class="tqr-content" id="tqr-conf-form"><span class="tqr-subheadline">Configurations</span></div></div><div class="tqr-footer"></div></div>
 `
         )
     }
@@ -440,7 +462,11 @@ class TissQuickRegistration {
         section.append('<div class="tqr-small-spacer"></div>');
 
         for (const [key, value] of Object.entries(optionsToInject.options)) {
-            let id = "tqr-" + key;
+            if (tqrOption.excludedOptions.includes(key)) {
+                continue;
+            }
+
+            let id = key;
 
             if (typeof value === "boolean") {
                 section.append(TissQuickRegistration.createInput(id, "checkbox", value));
@@ -473,9 +499,13 @@ class TissQuickRegistration {
         TissQuickRegistration.updateOptionDropdown(optionsToInject.getKey());
     }
 
+    static injectCountdownIntoFooter() {
+        
+    }
+
     static hookControlEvents() {
         TissQuickRegistration.getButtonSave().on("click", function () {
-            TissQuickRegistration.options.save();
+            TissQuickRegistration.options.setOptions(TissQuickRegistration.getDataFromConfigurationSection()).save();
             TissQuickRegistration.updateOptionDropdown(TissQuickRegistration.options.getKey());
             TissQuickRegistration.log("Saved options to storage");
         });
@@ -537,15 +567,16 @@ class TissQuickRegistration {
 
     static createLabel(forElementId, content) {
         let label = document.createElement("label");
-        label.setAttribute("for", forElementId);
+        label.setAttribute("for", "tqr-" + forElementId);
         label.innerHTML = content;
         return label;
     }
 
-    static createInput(id, type, value) {
+    static createInput(name, type, value) {
         let input = document.createElement("input");
         input.setAttribute("type", type);
-        input.setAttribute("id", id);
+        input.setAttribute("id", "tqr-" + name);
+        input.setAttribute(strings.attributes.tqr.optionName, name);
         input.setAttribute("value", (type == "datetime-local") ? TissQuickRegistration.getDateFormat(value) : value);
 
         input.classList.add(strings.classes.tqr.inputConf.substring(1));
