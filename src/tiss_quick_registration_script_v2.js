@@ -1,6 +1,6 @@
 // ==UserScript==
-// @name         TISS Quick Registration Script V2
-// @version      2.4.2
+// @name         TQR by Jakin
+// @version      2.6.7
 // @description  Script to help you to get into the group you want. Opens automatically the right panel, registers automatically and confirms your registration automatically. If you don't want the script to do everything automatically, the focus is already set on the right button, so you only need to confirm. There is also an option available to auto refresh the page, if the registration button is not available yet, so you can open the site and watch the script doing its work. You can also set a specific time when the script should reload the page and start.
 // @copyright    2024 Jakob Kinne, MIT License
 // @require      http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
@@ -17,9 +17,16 @@ let tqrOption = {
         EXAM: "exam",
         NONE: "none"
     },
-    excludedOptions: ["lvaNumber", "registrationType", "started"],
+    excludedOptions: ["lvaNumber", "registrationType", "started", "dspwid"],
     localStorageKey: "TQRSavedOptions"
 };
+
+let autoConfirmUrls = [
+    "https://tiss.tuwien.ac.at/education/course/courseRegistration.xhtml",
+    "https://tiss.tuwien.ac.at/education/course/register.xhtml",
+    "https://tiss.tuwien.ac.at/education/course/groupList.xhtml",
+    "https://tiss.tuwien.ac.at/education/course/examDateList.xhtml"
+];
 
 let strings = {
     ids: {
@@ -43,6 +50,9 @@ let strings = {
         tqr: {
             log: ".tqr-log",
             inputConf: ".tqr-input-conf-field",
+        },
+        tiss: {
+            groupWrapper: ".groupWrapper",
         }
     },
     attributes: {
@@ -57,11 +67,23 @@ let localisations = {
         lvaRegistration: "Course registration",
         groups: "Groups",
         exams: "Exams",
+
+        register: "Register",
+        preRegister: "Pre-Register",
+        preRegistration: "Pre-Registration",
+
+        deregister: "Deregistration",
     },
     "de": {
         lvaRegistration: "LVA-Anmeldung",
         groups: "Gruppen",
         exams: "Prüfungen",
+
+        register: "Anmelden",
+        preRegister: "Voranmelden",
+        preRegistration: "Voranmeldung",
+
+        deregister: "Abmelden",
     }
 };
 // TODO: Language switch
@@ -93,6 +115,7 @@ class TQROption {
             registrationType: tqrOption.type.NONE,
             started: false,
             lvaNumber: "",
+            dspwid: -1,
         }
     }
 
@@ -139,8 +162,23 @@ class TQROption {
             if (object === undefined) return new TQRExamOption().lvaNumber(lvaNumber);
             return new TQRExamOption().setOptions(object);
         }
+        else if (registrationType == tqrOption.type.NONE) {
+            return null;
+        }
 
         throw new Error("Registration type not valid");
+    }
+
+    static loadTQROptionFromDspwid(dspwid) {
+        let storage = TQROption.getLocalStorageObject();
+
+        for (const obj of Object.values(storage)) {
+            if (obj.dspwid == dspwid) {
+                return this.loadTQROption(obj.lvaNumber, obj.registrationType);
+            }
+        }
+
+        return null;
     }
 
     getKey() {
@@ -258,12 +296,24 @@ class TQRExamOption extends TQROption {
 class TissQuickRegistration {
     constructor () {
         TissQuickRegistration.extendJQuery();
+
         TissQuickRegistration.injectCoreComponents();
 
+        TissQuickRegistration.log("Welcome to TQRv2 by JK");
+        TissQuickRegistration.log("LVA-Number: " + TissQuickRegistration.getLVANumber());
+        TissQuickRegistration.log("RegistrationType: " + TissQuickRegistration.getRegistrationType());
+        TissQuickRegistration.log("Semester: " + TissQuickRegistration.getSemester());
+        TissQuickRegistration.error("Warning current version might not support exams");
+
         TissQuickRegistration.options = null;
+
         TissQuickRegistration.injectOptions();
         TissQuickRegistration.manageControlAccess();
         TissQuickRegistration.hookControlEvents();
+
+        if (TissQuickRegistration.isConfirmURL()) {
+            TissQuickRegistration.disableAllElements();
+        }
 
         this.run();
     }
@@ -291,12 +341,6 @@ class TissQuickRegistration {
     }
 
     run() {
-        TissQuickRegistration.log("Welcome to TQRv2 by JK");
-        TissQuickRegistration.log("LVA-Number: " + TissQuickRegistration.getLVANumber());
-        TissQuickRegistration.log("RegistrationType: " + TissQuickRegistration.getRegistrationType());
-        TissQuickRegistration.log("Semester: " + TissQuickRegistration.getSemester());
-        TissQuickRegistration.error("Warning current version might not support exams");
-
         if (!TissQuickRegistration.options.started.val()) return;
 
         TissQuickRegistration.getButtonStart().click();
@@ -312,13 +356,17 @@ class TissQuickRegistration {
                     if (TissQuickRegistration.doGroupCheck()) {
                         let groupLabel = TissQuickRegistration.getGroupLabel();
                         TissQuickRegistration.highlight(groupLabel);
-                        TissQuickRegistration.log("Group: " + groupLabel.text().trim());
+                        if(!TissQuickRegistration.isConfirmURL()) {
+                            TissQuickRegistration.log("Group: " + groupLabel.text().trim());
+                        }
                     }
                 } else {
                     if (TissQuickRegistration.doExamCheck()) {
                         let examLabel = TissQuickRegistration.getExamLabel();
                         TissQuickRegistration.highlight(examLabel);
-                        TissQuickRegistration.log("Exam: " + examLabel.text().trim());
+                        if(!TissQuickRegistration.isConfirmURL()) {
+                            TissQuickRegistration.log("Exam: " + examLabel.text().trim());
+                        }
                     }
                 }
             }
@@ -330,6 +378,7 @@ class TissQuickRegistration {
             TissQuickRegistration.startTimer();
         }
         else {
+            TissQuickRegistration.registerAndConfirm();
         }
     }
 
@@ -340,7 +389,7 @@ class TissQuickRegistration {
         if (offset > 0) {
             TissQuickRegistration.startRefreshTimer(startTime);
         } else {
-
+            TissQuickRegistration.registerAndConfirm();
         }
     }
 
@@ -384,6 +433,29 @@ class TissQuickRegistration {
         window.setTimeout(function () {
             TissQuickRegistration.printTimeToStart(startTime);
         }, 1000);
+    }
+
+    static registerAndConfirm() {
+        let registrationType = TissQuickRegistration.getRegistrationType();
+        
+        if (registrationType === tqrOption.type.LVA) {
+            TissQuickRegistration.onLvaPage();
+        }
+        else if (registrationType === tqrOption.type.GROUP) {
+            TissQuickRegistration.onGroupPage();
+        }
+        else if (registrationType === tqrOption.type.EXAM) {
+            TissQuickRegistration.onExamPage();
+        }
+        else if (TissQuickRegistration.getStudyCodeSelect().length > 0) {
+            TissQuickRegistration.onStudyCodeSelectPage();
+        }
+        else if (TissQuickRegistration.getConfirmButton().length > 0) {
+            TissQuickRegistration.onConfirmPage();
+        }
+        else if (TissQuickRegistration.getOkButton().length > 0) {
+            TissQuickRegistration.onConfirmInfoPage();
+        }
     }
 
     ////////////////////////////////////////
@@ -484,13 +556,69 @@ class TissQuickRegistration {
         return data;
     }
 
-    static getRegistrationButton() {}
+    static getRegistrationButton(wrapper) {
+        let button;
+        let registrationType = TissQuickRegistration.options.registrationType.val();
 
-    static getConfirmButton() {}
+        if (Object.values(tqrOption.type).includes(registrationType)) {
+            button = $(wrapper).find("input:submit[value='"+localisations.register+"']");
 
-    static getOkButton() {}
+            if (button.length === 0) {
+                button = $(wrapper).find("input:submit[value='"+localisations.preRegister+"']");
 
-    static getStudyCodeSelect() {}
+                if (button.length === 0) {
+                    button = $(wrapper).find("input:submit[value='"+localisations.preRegistration+"']");
+                }
+            }
+        }
+        else {
+            TissQuickRegistration.error("Registration type is invalid");
+        }
+
+        return button;
+    }
+
+    static getCancelButton(wrapper) {
+        let button = null;
+        let registrationType = TissQuickRegistration.options.registrationType.val();
+
+        if (registrationType === tqrOption.type.GROUP || registrationType === tqrOption.type.EXAM) {
+            button = $(wrapper).find("input:submit[value='"+localisations.deregister+"']");
+        }
+        else if (registrationType === tqrOption.type.LVA) {
+            button = $(wrapper).find("input:submit[value='"+localisations.deregister+"']")
+                .filter(function () {
+                    return $(this).attr("id") !== 'registrationForm:confirmOkBtn';
+                });
+        }
+        else {
+            TissQuickRegistration.error("Registration type is invalid");
+        }
+
+        return button;
+    }
+
+    static getConfirmButton() {
+        let button = $(wrapper).find("form#regForm input:submit[value='"+localisations.register+"']");
+
+        if (button.length === 0) {
+            button = $(wrapper).find("form#regForm input:submit[value='"+localisations.preRegister+"']");
+
+            if (button.length === 0) {
+                button = $(wrapper).find("form#regForm input:submit[value='"+localisations.preRegistration+"']");
+            }
+        }
+
+        return button;
+    }
+
+    static getOkButton() {
+        return $("form#confirmForm input:submit[value='Ok']");
+    }
+
+    static getStudyCodeSelect() {
+        return $("#regForm").find("select");
+    }
 
     static getGroupLabel() {
         let groupConfName = TissQuickRegistration.options.nameOfGroup.val()
@@ -528,6 +656,10 @@ class TissQuickRegistration {
         return date.getDate() + "." + (date.getMonth() + 1) + "." + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + ":" + date.getMilliseconds();
     }
 
+    static getDspwid() {
+        return $("input[name='dspwid']").attr("value");
+    }
+
     //
     //  End of Getters
     ////////////////////////////////////////////
@@ -536,17 +668,113 @@ class TissQuickRegistration {
     //  On Page
     //
 
-    onLVAPage() {}
+    static onLvaPage() {
+        TissQuickRegistration.onRegistrationPage(
+            TissQuickRegistration.getGroupLabel()
+        );
+    }
 
-    onGroupPage() {}
+    static onGroupPage() {
+        TissQuickRegistration.onRegistrationPage(
+            TissQuickRegistration.getGroupLabel()
+        );
+    }
 
-    onExamPage() {}
+    static onExamPage() {
+        TissQuickRegistration.onRegistrationPage(
+            TissQuickRegistration.getExamLabel()
+        );
+    }
 
-    onStudyCodeSelectPage() {}
+    static onRegistrationPage(label) {
+        if (label === null) {
+            return;
+        }
 
-    onConfirmPage() {}
+        let options = TissQuickRegistration.options;
 
-    onConfirmInfoPage() {}
+        if (options.lvaCheckEnabled.val() && !TissQuickRegistration.doLvaCheck()) {
+            return;
+        }
+
+        if (options.lvaSemesterCheckEnabled.val() && !TissQuickRegistration.doSemesterCheck()) {
+            return;
+        }
+
+        TissQuickRegistration.highlight(label);
+
+        let wrapper = label.closest(strings.classes.tiss.groupWrapper);
+
+        // open the panel if the option is activated
+        if (options.openPanel.val()) {
+            wrapper.children().show();
+
+            // for some reason, we have to wait some time here and try it again :/
+            setTimeout(function () {
+                wrapper.children().show();
+            }, 100);
+        }
+
+        let registrationButton = TissQuickRegistration.getRegistrationButton(wrapper);
+        TissQuickRegistration.log("Registration button found");
+
+        if (registrationButton.length > 0) {
+            TissQuickRegistration.highlight(registrationButton);
+            registrationButton.focus();
+
+            if (options.autoRegister.val()) {
+                registrationButton.click();
+            }
+        }
+        else {
+            if (TissQuickRegistration.getCancelButton(wrapper).length > 0) {
+                TissQuickRegistration.error("You are registered already");
+            }
+            else {
+                if (options.autoRefresh.val()) {
+                    TissQuickRegistration.refreshPage();
+                }
+                TissQuickRegistration.error("No registration button found");
+            }
+        }
+    }
+
+    static onStudyCodeSelectPage() {
+        let studyCodeSelect = TissQuickRegistration.getStudyCodeSelect();
+        let confirmButton = TissQuickRegistration.getConfirmButton();
+
+        TissQuickRegistration.highlight(confirmButton);
+
+        if (TissQuickRegistration.options.studyCode.val() !== undefined
+            && TissQuickRegistration.options.studyCode.val().length > 0) {
+            TissQuickRegistration.setSelectValue(studyCodeSelect, TissQuickRegistration.options.studyCode.val());
+        }
+
+        confirmButton.focus();
+        if (TissQuickRegistration.options.autoConfirm.val()) {
+            confirmButton.click();
+        }
+    }
+
+    static onConfirmPage() {
+        let button = TissQuickRegistration.getConfirmButton();
+        TissQuickRegistration.highlight(button);
+        button.focus();
+        if (TissQuickRegistration.options.autoConfirm.val()) {
+            button.click();
+        }
+    }
+
+    static onConfirmInfoPage() {
+        let button = TissQuickRegistration.getOkButton();
+        TissQuickRegistration.highlight(button);
+        if (TissQuickRegistration.options.autoOkPressAtEnd.val()) {
+            setTimeout(function () {
+                let button = TissQuickRegistration.getOkButton();
+                button.click();
+            }, TissQuickRegistration.options.okPressAtEndDelayInMs.val());
+        }
+    }
 
     //
     //  End of on Page
@@ -559,7 +787,7 @@ class TissQuickRegistration {
     static doLvaCheck() {
         let lvaNumber = TissQuickRegistration.getLVANumber();
         let optionsLvaNumber = TissQuickRegistration.options.lvaNumber.val();
-        if (lvaNumber !== optionsLvaNumber) {
+        if (lvaNumber !== optionsLvaNumber && !TissQuickRegistration.isConfirmURL()) {
             TissQuickRegistration.error("Wrong lva number, expected '" + lvaNumber + "'");
             return false;
         }
@@ -569,7 +797,7 @@ class TissQuickRegistration {
     static doSemesterCheck() {
         let subheader = TissQuickRegistration.getSubHeader();
         let optionsSemester = TissQuickRegistration.options.lvaSemester.val();
-        if (subheader.indexOf(optionsSemester) === -1) {
+        if (subheader.indexOf(optionsSemester) === -1 && !TissQuickRegistration.isConfirmURL()) {
             TissQuickRegistration.error("Wrong semester, expected '" + optionsSemester + "'");
             return false;
         }
@@ -578,7 +806,7 @@ class TissQuickRegistration {
     
     static doGroupCheck() {
         let groupLabel = TissQuickRegistration.getGroupLabel();
-        if (groupLabel.length === 0) {
+        if (groupLabel.length === 0 && !TissQuickRegistration.isConfirmURL()) {
             TissQuickRegistration.error("Group '" + groupLabel + "' not found");
             return false;
         }
@@ -588,12 +816,12 @@ class TissQuickRegistration {
     static doExamCheck() {
         let examLabel = TissQuickRegistration.getExamLabel();
         let examDate = TissQuickRegistration.getExamDate();
-        if (examLabel.length === 0) {
+        if (examLabel.length === 0 && !TissQuickRegistration.isConfirmURL()) {
             TissQuickRegistration.error("Exam '" + examLabel + "' not found");
             return false;
-        } else if (examDate.length === 0) {
+        } else if (examDate.length === 0 && !TissQuickRegistration.isConfirmURL()) {
             TissQuickRegistration.error("No exam on '" + examDate + "'");
-            return flase;
+            return false;
         }
         return true;
     }
@@ -630,12 +858,25 @@ class TissQuickRegistration {
     }
 
     static injectOptions(optionsToInject) {
-        if (optionsToInject === undefined) {
+        if (optionsToInject === undefined) { // Initial loading of the page
             optionsToInject = TQROption.loadTQROption(TissQuickRegistration.getLVANumber(), TissQuickRegistration.getRegistrationType());
         }
-        else if (typeof optionsToInject === "string") {
+        else if (typeof optionsToInject === "string") { // When selected in dropdown
             optionsToInject = optionsToInject.split("/");
             optionsToInject = TQROption.loadTQROption(optionsToInject[0], optionsToInject[1]);
+        }
+
+        if (optionsToInject === null) { // When on a confirm page
+            optionsToInject = TQROption.loadTQROptionFromDspwid(TissQuickRegistration.getDspwid());
+
+            if (optionsToInject === null) {
+                throw new Error("Something went wrong loading configuration");
+            }
+
+            console.log(optionsToInject);
+        }
+        else {
+            optionsToInject.dspwid(TissQuickRegistration.getDspwid());
         }
 
         let section = TissQuickRegistration.getConfigurationSection();
@@ -725,7 +966,8 @@ class TissQuickRegistration {
         TissQuickRegistration.getButtonStart().on("click", function () {
             let selectedKey = TissQuickRegistration.getLVANumber() + "/" + TissQuickRegistration.getRegistrationType();
 
-            if (TissQuickRegistration.options.getKey() != selectedKey) {
+            if (TissQuickRegistration.options.getKey() != selectedKey
+                && !TissQuickRegistration.isConfirmURL()) {
                 TissQuickRegistration.error("Cannot started with these options!");
                 return;
             }
@@ -844,6 +1086,20 @@ class TissQuickRegistration {
         logField.append(entry);
 
         logField.scrollTop(logField.prop("scrollHeight"));
+    }
+
+    static refreshPage() {
+        location.reload();
+    }
+
+    static isConfirmURL() {
+        return autoConfirmUrls.includes(location.href);
+    }
+
+    static disableAllElements() {
+        $("#tqr-menu button, #tqr-menu input, #tqr-menu select").each(function () {
+            $(this).disable();
+        });
     }
 
     //
