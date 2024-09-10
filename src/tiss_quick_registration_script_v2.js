@@ -156,6 +156,11 @@ class TQROption {
 
     setOptions(newOptions) {
         this.options = newOptions;
+
+        if (typeof newOptions.specificStartTime === "string") {
+            newOptions.specificStartTime = new Date(newOptions.specificStartTime);
+        }
+
         return this;
     }
 
@@ -217,6 +222,16 @@ class TQRExamOption extends TQROption {
         this.options.registrationType = tqrOption.type.EXAM;
 
         this.initBuildFunctions();
+    }
+
+    setOptions(newOptions) {
+        super.setOptions(newOptions);
+        
+        if (typeof newOptions.dateOfExam === "string") {
+            newOptions.dateOfExam = new Date(newOptions.dateOfExam);
+        }
+
+        return this;
     }
 }
 
@@ -318,6 +333,10 @@ class TissQuickRegistration {
 
     static getConfigurationSection() {
         return $(strings.ids.tqr.confForm);
+    }
+
+    static getConfigurationInputFields() {
+        return $(strings.classes.tqr.inputConf);
     }
 
     static getRegistrationButton() {}
@@ -475,6 +494,9 @@ class TissQuickRegistration {
                 return;
             }
 
+            TissQuickRegistration.options.started(true);
+            TissQuickRegistration.getButtonSave().click();
+
             TissQuickRegistration.success("Script started!");
         });
 
@@ -525,6 +547,8 @@ class TissQuickRegistration {
         input.setAttribute("type", type);
         input.setAttribute("id", id);
         input.setAttribute("value", (type == "datetime-local") ? TissQuickRegistration.getDateFormat(value) : value);
+
+        input.classList.add(strings.classes.tqr.inputConf.substring(1));
 
         if (type == "checkbox" && value) {
             input.setAttribute("checked", "checked");
