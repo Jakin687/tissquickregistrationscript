@@ -31,6 +31,7 @@ let strings = {
             buttonSave: "#tqr-button-save",
             buttonDelete: "#tqr-button-delete",
             buttonStart: "#tqr-button-start",
+            buttonStop: "#tqr-button-stop",
         },
         tiss: {
             content: "#contentInner",
@@ -76,7 +77,6 @@ else {
 class TQROption {
     constructor () {
         this.options = {
-            scriptEnabled: true,
             lvaCheckEnabled: true,
             lvaSemesterCheckEnabled: true,
             openPanel: true,
@@ -171,11 +171,21 @@ class TQROption {
         return this;
     }
 
+    get(name) {
+        return this.options[name];
+    }
+
     initBuildFunctions() {
         for (const [key, value] of Object.entries(this.options)) {
             this[key] = function (value) {
                 this.options[key] = value;
                 return this;
+            }
+
+            this[key].data = this;
+
+            this[key].val = function () {
+                return this.data.options[key];
             }
         }
     }
@@ -250,14 +260,12 @@ class TissQuickRegistration {
         TissQuickRegistration.extendJQuery();
         TissQuickRegistration.injectCoreComponents();
 
-        TissQuickRegistration.log("Welcome to TQRv2 by JK");
-        TissQuickRegistration.log("LVA-Number: " + TissQuickRegistration.getLVANumber());
-        TissQuickRegistration.log("RegistrationType: " + TissQuickRegistration.getRegistrationType());
-        TissQuickRegistration.log("Semester: " + TissQuickRegistration.getSemester());
-
         TissQuickRegistration.options = null;
         TissQuickRegistration.injectOptions();
+        TissQuickRegistration.manageControlAccess();
         TissQuickRegistration.hookControlEvents();
+
+        this.run();
     }
 
     static extendJQuery() {
@@ -270,7 +278,95 @@ class TissQuickRegistration {
         };
     }
 
-    tissQuickRegistration() {}
+    run() {
+        TissQuickRegistration.log("Welcome to TQRv2 by JK");
+        TissQuickRegistration.log("LVA-Number: " + TissQuickRegistration.getLVANumber());
+        TissQuickRegistration.log("RegistrationType: " + TissQuickRegistration.getRegistrationType());
+        TissQuickRegistration.log("Semester: " + TissQuickRegistration.getSemester());
+
+        if (!TissQuickRegistration.options.started.val()) return;
+
+        TissQuickRegistration.getButtonStart().click();
+    }
+
+    static tissQuickRegistration() {
+        let options = TissQuickRegistration.options;
+
+        // test if the lva and group exists
+        if (!options.lvaCheckEnabled.val() || TissQuickRegistration.doLvaCheck()) {
+            if (!options.lvaSemesterCheckEnabled.val() || TissQuickRegistration.doSemesterCheck()) {
+                if (options.registrationType.val() !== tqrOption.type.EXAM) {
+                    if (TissQuickRegistration.doGroupCheck()) {
+                        let groupLabel = TissQuickRegistration.getGroupLabel();
+                        TissQuickRegistration.highlight(groupLabel);
+                        TissQuickRegistration.log("Group: " + groupLabel.text().trim());
+                    }
+                } else {
+                    if (TissQuickRegistration.doExamCheck()) {
+                        let examLabel = TissQuickRegistration.getExamLabel();
+                        TissQuickRegistration.highlight(examLabel);
+                        TissQuickRegistration.log("Exam: " + examLabel.text().trim());
+                    }
+                }
+            }
+        }
+
+        if (options.startAtSpecificTime.val()) {
+            this.log("Script starts at: " + TissQuickRegistration.getFormatedDate(options.specificStartTime.val()));
+            this.log("Delay adjustment in ms: " + options.delayAdjustmentInMs.val());
+            TissQuickRegistration.startTimer();
+        }
+        else {
+        }
+    }
+
+    static startTimer() {
+        let startTime = TissQuickRegistration.options.specificStartTime.val().getTime() - 
+            TissQuickRegistration.options.delayAdjustmentInMs.val();
+        let offset = startTime - new Date().getTime();
+        if (offset > 0) {
+            TissQuickRegistration.startRefreshTimer(startTime);
+        } else {
+
+        }
+    }
+
+    static startRefreshTimer(startTime) {
+        TissQuickRegistration.printTimeToStart(startTime);
+
+        let maxMillis = 2147483647;
+        let offset = startTime - new Date().getTime();
+
+        if (offset > maxMillis) {
+            offset = maxMillis;
+        }
+
+        window.setTimeout(TissQuickRegistration.refreshPage, offset);
+    }
+
+    static printTimeToStart(startTime) {
+        let offset = (startTime - new Date().getTime()) / 1000;
+        let out = "Refresh in: ";
+        let minutes = offset / 60;
+
+        if (minutes > 1) {
+            let hours = minutes / 60;
+            if (hours > 1) {
+                out += Math.floor(hours) + "h, "
+                minutes = minutes % 60;
+            }
+            out += Math.floor(minutes) + "m and ";
+        }
+
+        let seconds = offset % 60;
+        out += Math.floor(seconds) + "s";
+
+        TissQuickRegistration.pageCountdown(out);
+
+        window.setTimeout(function () {
+            TissQuickRegistration.printTimeToStart(startTime);
+        }, 1000);
+    }
 
     ////////////////////////////////////////
     //  Getters
@@ -315,7 +411,12 @@ class TissQuickRegistration {
     }
 
     static getCountdownField() {
-        return $(strings.ids.tqr.countdown);
+        let field = $(strings.ids.tqr.countdown);
+        if (field.length === 0) {
+            TissQuickRegistration.injectCountdownIntoFooter();
+            field = TissQuickRegistration.getCountdownField();
+        }
+        return field;
     }
 
     static getLogField() {
@@ -336,6 +437,10 @@ class TissQuickRegistration {
 
     static getButtonStart() {
         return $(strings.ids.tqr.buttonStart);
+    }
+
+    static getButtonStop() {
+        return $(strings.ids.tqr.buttonStop);
     }
 
     static getConfigurationSection() {
@@ -369,14 +474,33 @@ class TissQuickRegistration {
 
     static getStudyCodeSelect() {}
 
-    static getGroupLabel() {}
+    static getGroupLabel() {
+        let groupConfName = TissQuickRegistration.options.nameOfGroup.val()
+            .trim().replace(/\s\s+/gi, ' ');
 
-    static getExamLabel() {}
+        return $(".groupWrapper .header_element span").filter(function () {
+            let name = $(this).text().trim().replace(/\s\s+/gi, ' ');
+            return name === groupConfName;
+        });
+    }
+
+    static getExamLabel() {
+        let examConfName = TissQuickRegistration.options.nameOfExam.val();
+
+        return $(".groupWrapper .header_element span").filter(function () {
+            let name = $(this).text().trim();
+            return name.match(examConfName);
+        });
+    }
 
     static getExamDate() {}
 
     static getDateFormat(date) {
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+    }
+
+    static getFormatedDate(date) {
+        return date.getDate() + "." + (date.getMonth() + 1) + "." + date.getFullYear() + " " + date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds() + ":" + date.getMilliseconds();
     }
 
     //
@@ -407,15 +531,49 @@ class TissQuickRegistration {
     //  Checks
     //
 
-    doGroupCheck() {}
+    static doLvaCheck() {
+        let lvaNumber = TissQuickRegistration.getLVANumber();
+        let optionsLvaNumber = TissQuickRegistration.options.lvaNumber.val();
+        if (lvaNumber !== optionsLvaNumber) {
+            TissQuickRegistration.error("Wrong lva number, expected '" + lvaNumber + "'");
+            return false;
+        }
+        return true;
+    }
+    
+    static doSemesterCheck() {
+        let subheader = TissQuickRegistration.getSubHeader();
+        let optionsSemester = TissQuickRegistration.options.lvaSemester.val();
+        if (subheader.indexOf(optionsSemester) === -1) {
+            TissQuickRegistration.error("Wrong semester, expected '" + optionsSemester + "'");
+            return false;
+        }
+        return true;
+    }
+    
+    static doGroupCheck() {
+        let groupLabel = TissQuickRegistration.getGroupLabel();
+        if (groupLabel.length === 0) {
+            TissQuickRegistration.error("Group '" + groupLabel + "' not found");
+            return false;
+        }
+        return true;
+    }
 
-    doLVACheck() {}
+    static doExamCheck() {
+        let examLabel = TissQuickRegistration.getExamLabel();
+        let examDate = TissQuickRegistration.getExamDate();
+        if (examLabel.length === 0) {
+            TissQuickRegistration.error("Exam '" + examLabel + "' not found");
+            return false;
+        } else if (examDate.length === 0) {
+            TissQuickRegistration.error("No exam on '" + examDate + "'");
+            return flase;
+        }
+        return true;
+    }
 
-    doSemesterCheck() {}
-
-    doExamCheck() {}
-
-    isCorrectSemester() {}
+    static isCorrectSemester() {}
 
     //
     //  End of Checks
@@ -441,7 +599,7 @@ class TissQuickRegistration {
     static injectInterface() {
         $(strings.ids.tiss.header).prepend(
 `
-<div id="tqr-menu" class="collapsed"><div class="tqr-header" onclick="document.getElementById(&#34;tqr-menu&#34;).classList.toggle(&#34;collapsed&#34;)"><span class="tqr-headline">Easy Auto Registration</span></div><div class="tqr-body"><div class="tqr-content"><span class="tqr-subheadline">Log</span><div id="tqr-log-window"></div></div><div class="tqr-content"><span class="tqr-subheadline">Controls</span><div class="tqr-controls"><select name="tqr-select-option" id="tqr-select-option"></select> <button id="tqr-button-save">Save</button> <button id="tqr-button-delete">Delete</button> <button id="tqr-button-start">Start</button></div></div><div class="tqr-content" id="tqr-conf-form"><span class="tqr-subheadline">Configurations</span></div></div><div class="tqr-footer"></div></div>
+<div id="tqr-menu" class="collapsed"><div class="tqr-header" onclick="document.getElementById(&#34;tqr-menu&#34;).classList.toggle(&#34;collapsed&#34;)"><span class="tqr-headline">Easy Auto Registration</span></div><div class="tqr-body"><div class="tqr-content"><span class="tqr-subheadline">Log</span><div id="tqr-log-window"></div></div><div class="tqr-content"><span class="tqr-subheadline">Controls</span><div class="tqr-controls"><select name="tqr-select-option" id="tqr-select-option"></select> <button id="tqr-button-save">Save</button> <button id="tqr-button-delete">Delete</button> <button id="tqr-button-start">Start</button> <button id="tqr-button-stop">Stop</button></div></div><div class="tqr-content" id="tqr-conf-form"><span class="tqr-subheadline">Configurations</span></div></div><div class="tqr-footer"></div></div>
 `
         )
     }
@@ -500,19 +658,35 @@ class TissQuickRegistration {
     }
 
     static injectCountdownIntoFooter() {
+        $("#tqr-menu > .tqr-footer").last().html('<span id="tqr-countdown" class="tqr-subheadline">No countdown to display</span>');
+    }
+
+    static manageControlAccess() {
+        console.log(TissQuickRegistration.options.options.started);
         
+
+        if (TissQuickRegistration.options.started.val()) {
+            TissQuickRegistration.getButtonStart().attr("disabled", true);
+            TissQuickRegistration.getButtonStop().attr("disabled", false);
+        }
+        else {
+            TissQuickRegistration.getButtonStart().attr("disabled", false);
+            TissQuickRegistration.getButtonStop().attr("disabled", true);
+        }
     }
 
     static hookControlEvents() {
         TissQuickRegistration.getButtonSave().on("click", function () {
             TissQuickRegistration.options.setOptions(TissQuickRegistration.getDataFromConfigurationSection()).save();
             TissQuickRegistration.updateOptionDropdown(TissQuickRegistration.options.getKey());
+            TissQuickRegistration.manageControlAccess();
             TissQuickRegistration.log("Saved options to storage");
         });
 
         TissQuickRegistration.getButtonDelete().on("click", function () {
             TissQuickRegistration.options.remove();
             TissQuickRegistration.updateOptionDropdown();
+            TissQuickRegistration.manageControlAccess();
             TissQuickRegistration.log("Deleted options from storage");
         });
 
@@ -526,13 +700,16 @@ class TissQuickRegistration {
 
             TissQuickRegistration.options.started(true);
             TissQuickRegistration.getButtonSave().click();
+            TissQuickRegistration.manageControlAccess();
 
             TissQuickRegistration.success("Script started!");
+            TissQuickRegistration.tissQuickRegistration();
         });
 
         TissQuickRegistration.getOptionSelect().on("input", function (event) {
             TissQuickRegistration.log("Loading " + event.target.value);
             TissQuickRegistration.injectOptions(event.target.value);
+            TissQuickRegistration.manageControlAccess();
         });
     }
 
@@ -595,13 +772,14 @@ class TissQuickRegistration {
         return option;
     }
 
-    pageCountdown() {}
-
-    highlight(object) {
-        object.css("background-color", "lightgreen");
+    static pageCountdown(text) {
+        let out = TissQuickRegistration.getCountdownField();
+        out.text(text);
     }
 
-    setSelectValue() {}
+    static highlight(object) {
+        object.css("background-color", "lightgreen");
+    }
 
     static error(text) {
         TissQuickRegistration.log(text, "error");
@@ -621,7 +799,6 @@ class TissQuickRegistration {
         logField.append(entry);
 
         logField.scrollTop(logField.prop("scrollHeight"));
-        
     }
 
     //
