@@ -22,7 +22,7 @@ The UserScript helps you to get into the group you want on TISS fully automatica
 
 ## Usage
 
-1. Download the UserScript and install it to Tampermonkey/Greasemonkey.
+1. Download the [UserScript](https://github.com/Jakin687/tissquickregistrationscript/blob/master/src/tiss_quick_registration_script_v2.min.js "TQRv2") and Tampermonkey/Greasemonkey.
 1. Visit the dashboard of the previously installed plugin
 1. Create a new script and copy/paste the downloaded one
 1. Go to the specific LVA/Group/Exam registration webpage in TISS, where you want to register.
