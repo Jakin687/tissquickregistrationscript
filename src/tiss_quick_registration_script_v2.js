@@ -44,6 +44,8 @@ let strings = {
             content: "#contentInner",
             header: "#headerInner",
             subHeader: "#subHeader",
+            languageDe: "#language_de",
+            lenguageEn: "#language_en",
         }
     },
     classes: {
@@ -86,9 +88,9 @@ let localisations = {
         deregister: "Abmelden",
     }
 };
-// TODO: Language switch
-if (localisations[navigator.language.substring(0, 2)] === undefined) {
-    localisations = localisations["de"];
+
+if ($(strings.ids.tiss.languageDe).length > 0) {
+    localisations = localisations["en"];
 }
 else {
     localisations = localisations["de"];
@@ -472,6 +474,10 @@ class TissQuickRegistration {
 
     static getRegistrationType() {
         let semesterTab = TissQuickRegistration.getSemesterTab();
+        
+        console.log(semesterTab);
+        console.log(localisations.exams);
+        
 
         if (semesterTab == localisations.lvaRegistration) {
             return tqrOption.type.LVA;
