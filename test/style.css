@@ -163,3 +163,7 @@
     width: 100%;
     height: 5px;
 }
+
+.tqr-highlight {
+    background-color: lightgreen !important;
+}
