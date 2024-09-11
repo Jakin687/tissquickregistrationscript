@@ -284,8 +284,8 @@ class TQRExamOption extends TQROption {
     setOptions(newOptions) {
         super.setOptions(newOptions);
         
-        if (typeof newOptions.dateOfExam === "string") {
-            newOptions.dateOfExam = new Date(newOptions.dateOfExam);
+        if (typeof this.options.dateOfExam === "string") {
+            this.options.dateOfExam = new Date(this.options.dateOfExam);
         }
 
         return this;
@@ -474,10 +474,6 @@ class TissQuickRegistration {
 
     static getRegistrationType() {
         let semesterTab = TissQuickRegistration.getSemesterTab();
-        
-        console.log(semesterTab);
-        console.log(localisations.exams);
-        
 
         if (semesterTab == localisations.lvaRegistration) {
             return tqrOption.type.LVA;
