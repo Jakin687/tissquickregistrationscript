@@ -41,7 +41,23 @@ The UserScript helps you to get into the group you want on TISS fully automatica
 
 ## Configuration
 
-See documentation within the script.
+| **Configuration**       | **Description**                                                                                                                         |
+|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------|
+| lvaCheckEnabled         | checks if you are at the correct lva page                                                                                               |
+| lvaSemesterCheckEnabled | checks if you are at the correct semester                                                                                               |
+| openPanel               | automatically opens the detail panel of a group                                                                                         |
+| autoRegister            | automatically presses the register button if it is available                                                                            |
+| autoConfirm             | automatically presses the confirm button for your registration                                                                          |
+| autoRefresh             | continuously refresh the page until the script can register you                                                                         |
+| autoOkPressAtEnd        | automatically presses the ok button on the confirmation info page                                                                       |
+| startAtSpecificTime     | let the script start at a specific time                                                                                                 |
+| okPressAtEndDelayInMs   | a delay on the confirm info page, until the ok button gets pressed                                                                      |
+| delayAdjustmentInMs     | if a specific time is defined, the script will refresh some ms sooner to adjust a delay                                                 |
+| specificStartTime       | define the specific time the script should start                                                                                        |
+| lvaSemester             | only if the semester is correct, the script is enabled                                                                                  |
+| nameOfGroup             | name of you the group you want to join (only for registrationType 'group' / otherwise automatically set or empty)                       |
+| nameOfExam              | name of the exam which you want to join (only for registrationType 'exam')                                                              |
+| dateOfExam              | date of the exam which you want to join, especially when there are multiple exams with the same name (only for registrationType 'exam') |
 
 
 ## License
