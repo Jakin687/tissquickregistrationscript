@@ -1,8 +1,8 @@
-TISS Quick Registration Script
+TISS Quick Registration Script v2
 ===========================
-by [Manuel Geier](https://geier.io "Manuel Geier")
+by Jakob Kinne / originaly by [Manuel Geier](https://geier.io "Manuel Geier")
 
-⚠️ **IMPORTANT: This project is not maintained anymore. It might still work, but also might not anymore. Use at your own risk. Feel free to fork it. All the best for your studies!**
+⚠️ **IMPORTANT: Use at your own risk. Feel free to fork it. All the best for your studies!**
 
 ## What is it about?
 
@@ -23,11 +23,20 @@ The UserScript helps you to get into the group you want on TISS fully automatica
 ## Usage
 
 1. Download the UserScript and install it to Tampermonkey/Greasemonkey.
-1. Configure the script (see Configuration) to fulfill your requirements for a specific registration to a group.
-1. Go to the specific LVA/Group registration webpage in TISS, where you want to register.
-1. Enable the script.
-1. Lean back and let the script do its job (it automatically starts if you entered a startdate (prefered) or refreshes the page continuously (see Configuration)).
-1. Don’t forget to disable the UserScript if the registration is done.
+1. Visit the dashboard of the previously installed plugin
+1. Create a new script and copy/paste the downloaded one
+1. Go to the specific LVA/Group/Exam registration webpage in TISS, where you want to register.
+1. The Script should inject its GUI into the top left corner of the page
+1. Configure and save your configuration within the interface
+1. Start the script and lean back(it automatically starts if you entered a startdate (prefered) or refreshes the page continuously (see Configuration))
+1. Afer you are registered the script should automaticaly stop
+
+### Notes
++ The scripts interface will only be displayed on the correct pages
++ Even after you're registered the configuration of a registration is going to be available. You can keep or delete it (deletion is recommended)
++ You can edit every configuration on every page the interface is displayed in. However, you can only successfully start a configuration on its own page
++ Configurations are persistent, even if you reload the window or close the tab/browser (*SCRIPT WILL ONLY WORK IF STARTED AND ON THE CORRECT PAGE || THEREFORE BROWSER CLOSED = NOT WORKING*)
++ It is possible to register for multiple things at once. You only need to have every registration in different tabs opened, configured and started at the same time (No need to create a duplicate of the script or slt).
 
 
 ## Configuration
@@ -35,22 +44,10 @@ The UserScript helps you to get into the group you want on TISS fully automatica
 See documentation within the script.
 
 
-## Changelog
-
-Can be found within the script.
-
-
 ## License
 
 MIT (see LICENSE)
 
-
-## Support
-
-If you find any errors or bugs, or have ideas for improvement, please simply create a ticket in the issue tracker:
-https://github.com/mangei/tissquickregistrationscript/issues
-
-Thanks :)
 
 ## Disclaimer
 
