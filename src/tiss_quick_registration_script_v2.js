@@ -756,6 +756,7 @@ class TissQuickRegistration {
         else {
             if (TissQuickRegistration.getCancelButton(wrapper).length > 0) {
                 TissQuickRegistration.error("You are registered already");
+                TissQuickRegistration.getButtonStop().click();
             }
             else {
                 if (options.autoRefresh.val()) {
