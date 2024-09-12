@@ -645,9 +645,9 @@ class TissQuickRegistration {
     static getExamLabel() {
         let examConfName = TissQuickRegistration.options.nameOfExam.val();
 
-        return $(".groupWrapper .header_element span").filter(function () {
+        return $(".groupWrapper .header_element.titleCol.titleColStudent.groupHeadertrigger span").filter(function () {
             let name = $(this).text().trim();
-            return name.match(examConfName);
+            return name == examConfName; // .match() cannot match exam names with brackets
         });
     }
 
@@ -663,7 +663,7 @@ class TissQuickRegistration {
     static getExam() {
         return $(".groupWrapper .header_element.titleCol.titleColStudent.groupHeadertrigger").filter(function () {
             let examData = $(this).text().trim();
-            return examData.match(TissQuickRegistration.options.nameOfExam.val() + " " + TissQuickRegistration.getSimpleFormatedDate(TissQuickRegistration.options.dateOfExam.val()));
+            return examData == (TissQuickRegistration.options.nameOfExam.val() + " " + TissQuickRegistration.getSimpleFormatedDate(TissQuickRegistration.options.dateOfExam.val()));
         });
     }
 
