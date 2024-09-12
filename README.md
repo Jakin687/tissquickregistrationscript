@@ -29,7 +29,7 @@ The UserScript helps you to get into the group you want on TISS fully automatica
 1. The Script should inject its GUI into the top left corner of the page
 1. Configure and save your configuration within the interface
 1. Start the script and lean back(it automatically starts if you entered a startdate (prefered) or refreshes the page continuously (see Configuration))
-1. Afer you are registered the script should automaticaly stop
+1. Afer you are registered the script should automatically stop
 
 ### Notes
 + The scripts interface will only be displayed on the correct pages
