@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         TQR by Jakin
-// @version      2.7
+// @version      2.7.1
 // @description  Script to help you to get into the group you want. Opens automatically the right panel, registers automatically and confirms your registration automatically. If you don't want the script to do everything automatically, the focus is already set on the right button, so you only need to confirm. There is also an option available to auto refresh the page, if the registration button is not available yet, so you can open the site and watch the script doing its work. You can also set a specific time when the script should reload the page and start.
 // @copyright    2024 Jakob Kinne, MIT License
 // @require      http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
@@ -9,6 +9,8 @@
 // @match        https://tiss.tuwien.ac.at/education/course/groupList.xhtml*
 // @match        https://tiss.tuwien.ac.at/education/course/examDateList.xhtml*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=tuwien.ac.at
+// @updateURL    https://raw.githubusercontent.com/Jakin687/tissquickregistrationscript/master/src/tiss_quick_registration_script_v2.min.js
+// @downloadURL  https://raw.githubusercontent.com/Jakin687/tissquickregistrationscript/master/src/tiss_quick_registration_script_v2.min.js
 // ==/UserScript==
 
 let tqrOption = {
