@@ -12,7 +12,7 @@
     color: white;
     font-size: 15px;
     overflow-y: hidden;
-    transition: height 250ms ease-in-out;
+    transition: height 250ms ease-in-out, opacity 250ms ease-in-out;
     z-index: 1000;
     margin-top: 20px;
     margin-left: 20px;
@@ -22,7 +22,13 @@
     -khtml-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
-    user-select: none
+    user-select: none;
+
+    opacity: 0;
+}
+
+#tqr-menu:hover {
+    opacity: 1;
 }
 
 #tqr-menu.collapsed {
