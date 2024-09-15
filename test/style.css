@@ -6,7 +6,7 @@
     background-color: var(--tqr-primary-color);
     width: 300px;
     height: 500px;
-    position: absolute;
+    position: fixed;
     border-radius: 5px;
     font-family: Arial, Helvetica, sans-serif;
     color: white;
