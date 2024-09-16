@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         TQR by Jakin
-// @version      2.7.3
+// @version      2.7.4
 // @description  Script to help you to get into the group you want. Opens automatically the right panel, registers automatically and confirms your registration automatically. If you don't want the script to do everything automatically, the focus is already set on the right button, so you only need to confirm. There is also an option available to auto refresh the page, if the registration button is not available yet, so you can open the site and watch the script doing its work. You can also set a specific time when the script should reload the page and start.
 // @copyright    2024 Jakob Kinne, MIT License
 // @require      http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
@@ -115,7 +115,7 @@ class TQROption {
             startAtSpecificTime: true,
             okPressAtEndDelayInMs: 1000,
             delayAdjustmentInMs: 300,
-            specificStartTime: TQROption.getDate(2024, 9, 9, 0, 0),
+            specificStartTime: TQROption.getDateOfNextHour(),
             lvaSemester: TQROption.getCurrentOrNextSemester(),
             
             registrationType: tqrOption.type.NONE,
@@ -247,8 +247,15 @@ class TQROption {
         return now.getFullYear() + "S";
     }
 
-    static getDate(year, month, day, hour, minute) {
-        return new Date(year, month - 1, day, hour, minute, 0, 0);
+    static getDateOfNextHour() {
+        let date = new Date();
+
+        date.setMilliseconds(0);
+        date.setSeconds(0);
+        date.setMinutes(0);
+        date.setHours(date.getHours() + 1);
+
+        return date;
     }
 }
 
@@ -279,7 +286,7 @@ class TQRExamOption extends TQROption {
         super();
 
         this.options.nameOfExam = "";
-        this.options.dateOfExam = new Date();
+        this.options.dateOfExam = TQROption.getDateOfNextHour();
         this.options.registrationType = tqrOption.type.EXAM;
 
         this.initBuildFunctions();
@@ -901,7 +908,7 @@ class TissQuickRegistration {
     }
 
     static injectOptions(optionsToInject) {
-        if (optionsToInject === undefined) { // Initial loading of the page
+        if (optionsToInject === undefined || optionsToInject == "") { // Initial loading of the page or selection of "Create New"
             optionsToInject = TQROption.loadTQROption(TissQuickRegistration.getLVANumber(), TissQuickRegistration.getRegistrationType());
         }
         else if (typeof optionsToInject === "string") { // When selected in dropdown
@@ -1058,18 +1065,26 @@ class TissQuickRegistration {
         let select = TissQuickRegistration.getOptionSelect();
         
         select.empty();
-        let keyExists = false;
+        let currentPageOptionKey = TissQuickRegistration.getLVANumber() + "/" + TissQuickRegistration.getRegistrationType();
+        let createNewKey = currentPageOptionKey != "/none"; // "/none" on confirm page
+        let selectNewKey = true;
 
         for (const key of TQROption.getLocalStorageKeys()) {
+            if (key == currentPageOptionKey) {
+                createNewKey = false;
+            }
             if (key == selectedKey) {
-                keyExists = true;
+                selectNewKey = false;
             }
             select.append(TissQuickRegistration.createOption(key, key));
         }
 
-        if (!keyExists) {
+        if (createNewKey) {
             select.append(TissQuickRegistration.createOption("", "Create new"));
-            selectedKey = "";
+
+            if (selectNewKey) {
+                selectedKey = "";
+            }
         }
 
         select.val(selectedKey).change(); // Because it is a jQuery-Object
