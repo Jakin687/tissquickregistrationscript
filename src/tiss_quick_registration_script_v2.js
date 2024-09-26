@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         TQR by Jakin
-// @version      2.7.5
+// @version      2.7.6
 // @description  Script to help you to get into the group you want. Opens automatically the right panel, registers automatically and confirms your registration automatically. If you don't want the script to do everything automatically, the focus is already set on the right button, so you only need to confirm. There is also an option available to auto refresh the page, if the registration button is not available yet, so you can open the site and watch the script doing its work. You can also set a specific time when the script should reload the page and start.
 // @copyright    2024 Jakob Kinne, MIT License
 // @require      http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
@@ -703,6 +703,18 @@ class TissQuickRegistration {
         }).find("a").text();
     }
 
+    static getExamSlotDropDown() {
+        return $("fieldset .leftBlock select[id='regForm:subgrouplist']");
+    }
+
+    static getExamSlotDropDownId(dropdown, date) {
+        for (let child of dropdown.children()) {
+            if (child.innerHTML.startsWith(TissQuickRegistration.getFormatedSlotDate(date))) {
+                return child.value;
+            }
+        }
+    }
+
     static getDateFormat(date) {
         return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}T${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     }
@@ -713,6 +725,10 @@ class TissQuickRegistration {
 
     static getSimpleFormatedDate(date) {
         return `${String(date.getDate()).padStart(2, '0')}.${String(date.getMonth() + 1).padStart(2, '0')}.${date.getFullYear()}`;
+    }
+
+    static getFormatedSlotDate(date) {
+        return `${TissQuickRegistration.getSimpleFormatedDate(date)} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
     }
 
     static getDspwid() {
@@ -821,8 +837,28 @@ class TissQuickRegistration {
     }
 
     static onConfirmPage() {
+        if (TissQuickRegistration.options.registrationType == tqrOption.type.EXAM) {
+            let dropdown = TissQuickRegistration.getExamSlotDropDown();
+            TissQuickRegistration.highlight(dropdown);
+
+            if (dropdown.length != 0) {
+                TissQuickRegistration.selectDropdownKey(
+                    dropdown,
+                    TissQuickRegistration.getExamSlotDropDownId(
+                        dropdown,
+                        TissQuickRegistration.options.slotOfExam.val()
+                    ));
+
+                if (dropdown.val() == null) {
+                    TissQuickRegistration.error("Slot '" + TissQuickRegistration.options.slotOfExam.val() + "' not found");
+                    return;
+                }
+            }
+        }
+
         let button = TissQuickRegistration.getConfirmButton();
         TissQuickRegistration.highlight(button);
+
         button.focus();
         if (TissQuickRegistration.options.autoConfirm.val()) {
             button.click();
@@ -1113,7 +1149,11 @@ class TissQuickRegistration {
             }
         }
 
-        select.val(selectedKey).change(); // Because it is a jQuery-Object
+        TissQuickRegistration.selectDropdownKey(select, selectedKey); // Because it is a jQuery-Object
+    }
+
+    static selectDropdownKey(select, key) {
+        select.val(key).change();
     }
 
     static createLabel(forElementId, content) {

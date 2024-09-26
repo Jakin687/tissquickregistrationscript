@@ -58,6 +58,8 @@ The UserScript helps you to get into the group you want on TISS fully automatica
 | nameOfGroup             | name of you the group you want to join (only for registrationType 'group' / otherwise automatically set or empty)                       |
 | nameOfExam              | name of the exam which you want to join (only for registrationType 'exam')                                                              |
 | dateOfExam              | date of the exam which you want to join, especially when there are multiple exams with the same name (only for registrationType 'exam') |
+| placeOfExam             | location of exam which you want to join (eg. name of room / column "location" in the exams "Events" table) |
+| slotOfExam              | slot of exam which you want to join (sometimes exams have multiple slots a student can join / you need to enter start date & time infos of the slot) |
 
 
 ## License
