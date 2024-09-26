@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         TQR by Jakin
-// @version      2.7.4
+// @version      2.7.5
 // @description  Script to help you to get into the group you want. Opens automatically the right panel, registers automatically and confirms your registration automatically. If you don't want the script to do everything automatically, the focus is already set on the right button, so you only need to confirm. There is also an option available to auto refresh the page, if the registration button is not available yet, so you can open the site and watch the script doing its work. You can also set a specific time when the script should reload the page and start.
 // @copyright    2024 Jakob Kinne, MIT License
 // @require      http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
@@ -79,6 +79,8 @@ let localisations = {
         preRegistration: "Pre-Registration",
 
         deregister: "Deregistration",
+
+        appointments: "Events",
     },
     "de": {
         lvaRegistration: "LVA-Anmeldung",
@@ -90,6 +92,8 @@ let localisations = {
         preRegistration: "Voranmeldung",
 
         deregister: "Abmelden",
+
+        appointments: "Termine",
     }
 };
 
@@ -288,6 +292,8 @@ class TQRExamOption extends TQROption {
         this.options.nameOfExam = "";
         this.options.dateOfExam = TQROption.getDateOfNextHour();
         this.options.registrationType = tqrOption.type.EXAM;
+        this.options.placeOfExam = "";
+        this.options.slotOfExam = TQROption.getDateOfNextHour();
 
         this.initBuildFunctions();
     }
@@ -297,6 +303,10 @@ class TQRExamOption extends TQROption {
         
         if (typeof this.options.dateOfExam === "string") {
             this.options.dateOfExam = new Date(this.options.dateOfExam);
+        }
+        
+        if (typeof this.options.slotOfExam === "string") {
+            this.options.slotOfExam = new Date(this.options.slotOfExam);
         }
 
         return this;
@@ -671,10 +681,26 @@ class TissQuickRegistration {
     }
 
     static getExam() {
-        return $(".groupWrapper .header_element.titleCol.titleColStudent.groupHeadertrigger").filter(function () {
+        let exams = $(".groupWrapper .header_element.titleCol.titleColStudent.groupHeadertrigger").filter(function () {
             let examData = $(this).text().trim();
             return examData == (TissQuickRegistration.options.nameOfExam.val() + " " + TissQuickRegistration.getSimpleFormatedDate(TissQuickRegistration.options.dateOfExam.val()));
         });
+
+        if (exams.length > 1) {
+            let filteredExams = exams.filter(function () {
+                let location = TissQuickRegistration.getExamLocation($(this).closest(strings.classes.tiss.groupWrapper));             
+                return location == TissQuickRegistration.options.placeOfExam.val();
+            });
+            return filteredExams;
+        }
+
+        return exams;
+    }
+
+    static getExamLocation(wrapper) {
+        return $(wrapper).find("li").filter(function () {
+            return $(this).children().first().text() == localisations.appointments;
+        }).find("a").text();
     }
 
     static getDateFormat(date) {
