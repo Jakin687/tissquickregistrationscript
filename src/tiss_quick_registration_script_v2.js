@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         TQR by Jakin
-// @version      2.7.6
+// @version      2.7.7
 // @description  Script to help you to get into the group you want. Opens automatically the right panel, registers automatically and confirms your registration automatically. If you don't want the script to do everything automatically, the focus is already set on the right button, so you only need to confirm. There is also an option available to auto refresh the page, if the registration button is not available yet, so you can open the site and watch the script doing its work. You can also set a specific time when the script should reload the page and start.
 // @copyright    2024 Jakob Kinne, MIT License
 // @require      http://ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js
@@ -479,8 +479,8 @@ class TissQuickRegistration {
         else if (registrationType === tqrOption.type.EXAM) {
             TissQuickRegistration.onExamPage();
         }
-        else if (TissQuickRegistration.getStudyCodeSelect().length > 0) {
-            TissQuickRegistration.onStudyCodeSelectPage();
+        else if (TissQuickRegistration.getExamSlotDropdown().length > 0) {
+            TissQuickRegistration.onExamSlotSelectAndConfirmPage();
         }
         else if (TissQuickRegistration.getConfirmButton().length > 0) {
             TissQuickRegistration.onConfirmPage();
@@ -648,10 +648,6 @@ class TissQuickRegistration {
         return $("form#confirmForm input:submit[value='Ok']");
     }
 
-    static getStudyCodeSelect() {
-        return $("#regForm").find("select");
-    }
-
     static getGroupLabel() {
         let groupConfName = TissQuickRegistration.options.nameOfGroup.val()
             .trim().replace(/\s\s+/gi, ' ');
@@ -703,12 +699,14 @@ class TissQuickRegistration {
         }).find("a").text();
     }
 
-    static getExamSlotDropDown() {
-        return $("fieldset .leftBlock select[id='regForm:subgrouplist']");
+    static getExamSlotDropdown() {
+        return $("#regForm").find("select");
     }
 
-    static getExamSlotDropDownId(dropdown, date) {
-        for (let child of dropdown.children()) {
+    static getExamSlotDropdownId(dropdown, date) {
+        console.log(dropdown);
+        console.log(dropdown.children());
+        for (let child of Array.from(dropdown.children())) {
             if (child.innerHTML.startsWith(TissQuickRegistration.getFormatedSlotDate(date))) {
                 return child.value;
             }
@@ -732,7 +730,7 @@ class TissQuickRegistration {
     }
 
     static getDspwid() {
-        return $("input[name='dspwid']").attr("value");
+        return $("input[name='jakarta.faces.ClientWindow']").attr("value")
     }
 
     static getHighlightedElements() {
@@ -819,43 +817,30 @@ class TissQuickRegistration {
         }
     }
 
-    static onStudyCodeSelectPage() {
-        let studyCodeSelect = TissQuickRegistration.getStudyCodeSelect();
-        let confirmButton = TissQuickRegistration.getConfirmButton();
+    static onExamSlotSelectAndConfirmPage() {
+        let dropdown = TissQuickRegistration.getExamSlotDropdown();
+        TissQuickRegistration.highlight(dropdown);
 
-        TissQuickRegistration.highlight(confirmButton);
-
-        if (TissQuickRegistration.options.studyCode.val() !== undefined
-            && TissQuickRegistration.options.studyCode.val().length > 0) {
-            TissQuickRegistration.setSelectValue(studyCodeSelect, TissQuickRegistration.options.studyCode.val());
-        }
-
-        confirmButton.focus();
-        if (TissQuickRegistration.options.autoConfirm.val()) {
-            confirmButton.click();
-        }
-    }
-
-    static onConfirmPage() {
-        if (TissQuickRegistration.options.registrationType == tqrOption.type.EXAM) {
-            let dropdown = TissQuickRegistration.getExamSlotDropDown();
-            TissQuickRegistration.highlight(dropdown);
-
-            if (dropdown.length != 0) {
-                TissQuickRegistration.selectDropdownKey(
+        if (dropdown.length != 0) {
+            TissQuickRegistration.selectDropdownKey(
+                dropdown,
+                TissQuickRegistration.getExamSlotDropdownId(
                     dropdown,
-                    TissQuickRegistration.getExamSlotDropDownId(
-                        dropdown,
-                        TissQuickRegistration.options.slotOfExam.val()
-                    ));
+                    TissQuickRegistration.options.slotOfExam.val()
+                ));
 
-                if (dropdown.val() == null) {
-                    TissQuickRegistration.error("Slot '" + TissQuickRegistration.options.slotOfExam.val() + "' not found");
-                    return;
-                }
+            if (dropdown.val() == null) {
+                TissQuickRegistration.error("Slot '" + TissQuickRegistration.options.slotOfExam.val() + "' not found");
+                return;
             }
         }
 
+        TissQuickRegistration.removeHighlight(dropdown);
+
+        TissQuickRegistration.onConfirmPage();
+    }
+
+    static onConfirmPage() {
         let button = TissQuickRegistration.getConfirmButton();
         TissQuickRegistration.highlight(button);
 
