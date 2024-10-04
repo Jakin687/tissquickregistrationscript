@@ -4,6 +4,8 @@ by Jakob Kinne / originaly by [Manuel Geier](https://geier.io "Manuel Geier")
 
 ⚠️ **IMPORTANT: Use at your own risk. Feel free to fork it. All the best for your studies!**
 
+💫 **NOTE: This is a complete rework of the original script**
+
 ## What is it about?
 
 It is always very hard to get into a limited group if many other students (>200) also try to get into the same group. You have to be faster than anyone else. It was always a very thrilling moment, when the registration slots got opened. And so the idea was born to to create a automatic script, lean back and watch it doing its job in a very relaxed way.
@@ -18,6 +20,7 @@ The UserScript helps you to get into the group you want on TISS fully automatica
 
 * Google Chrome with [Tampermonkey](https://chrome.google.com/webstore/detail/tampermonkey/dhdgffkkebhmkfjojejmpbldmpobfkfo "Tampermonkey"), or
 * Firefox with [Greasemonkey](https://addons.mozilla.org/de/firefox/addon/greasemonkey "Greasemonkey")
+* Other browsers should work too (as long as the one of these plugins is installed)
 
 
 ## Usage
@@ -26,8 +29,9 @@ The UserScript helps you to get into the group you want on TISS fully automatica
 1. Visit the dashboard of the previously installed plugin
 1. Create a new script and copy/paste the downloaded one
 1. Go to the specific LVA/Group/Exam registration webpage in TISS, where you want to register.
-1. The Script should inject its GUI into the top left corner of the page
-1. Configure and save your configuration within the interface
+1. The Script should inject its GUI into the top left corner of the page (The GUI is hidden at first, you need to hover over it)
+1. Open the GUI by clicking the title "Easy Auto Registration"
+1. Configure and save your configuration within the interface ([Configurations](https://github.com/Jakin687/tissquickregistrationscript?tab=readme-ov-file#configuration "Documentaion"))
 1. Start the script and lean back(it automatically starts if you entered a startdate (prefered) or refreshes the page continuously (see Configuration))
 1. Afer you are registered the script should automatically stop
 
@@ -61,6 +65,9 @@ The UserScript helps you to get into the group you want on TISS fully automatica
 | placeOfExam             | location of exam which you want to join (eg. name of room / column "location" in the exams "Events" table) |
 | slotOfExam              | slot of exam which you want to join (sometimes exams have multiple slots a student can join / you need to enter start date & time infos of the slot) |
 
+*Every other configuration, like registrationType or lvaNumber, is gathered by the script automatically.*
+
+*In general I recommend not tampering with already filled out fields.*
 
 ## License
 
